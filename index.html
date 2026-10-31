@@ -95,7 +95,9 @@ function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 function ssGet(k){try{return sessionStorage.getItem(k)}catch(e){return null}}
 function ssSet(k,v){try{if(v)sessionStorage.setItem(k,v);else sessionStorage.removeItem(k)}catch(e){}}
 
-var BASE="",TOK=null,W=null,DIRTY=false,TAB="ord",FILTER="all",ORD=[],PROOF={},OPEN={},LASTB=-1,PT=0,BUSY=false,TT=0;
+/* Alamat web pembeli bawaan. Panel langsung memakai alamat ini, tidak perlu diketik saat login. */
+var DEFAULT_BASE="https://tokowebsanz.netlify.app";
+var BASE="",SHOWB=false,TOK=null,W=null,DIRTY=false,TAB="ord",FILTER="all",ORD=[],PROOF={},OPEN={},LASTB=-1,PT=0,BUSY=false,TT=0;
 var SL=[["baru","Baru"],["bukti","Bukti masuk"],["dibayar","Dibayar"],["selesai","Selesai"],["ditolak","Ditolak"]];
 var LBL={};SL.forEach(function(x){LBL[x[0]]=x[1]});
 var CK=["acc","acc2","cy","ok","bg","card","card2","line","text","mute","hb1","hb2"];
@@ -127,9 +129,14 @@ function foot(){var f=$("fmsg");f.className="in"+(DIRTY?" d":"");f.textContent=D
 
 /* ---------- login ---------- */
 function loginView(msg){W=null;clearInterval(PT);document.body.classList.remove("in");document.title="SANZ Admin";$("tabs").innerHTML="";$("foot").style.display="none";
- $("app").innerHTML='<div class="box lg"><h1>🔐 SANZ Admin</h1><p class="sub">Panel pengelola web pembeli.</p><label for="lb">Alamat web pembeli</label><input id="lb" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://namatoko.netlify.app" value="'+esc(BASE)+'"><p class="note" style="margin:-6px 0 12px">Kosongkan jika panel ini dipasang di web pembeli yang sama.</p><label for="lp">Kata sandi admin</label><input id="lp" type="password" autocomplete="current-password"><p class="msg bad" id="lm">'+esc(msg||"")+'</p><button class="btn" id="lgo" type="button">Masuk</button></div>'}
+ var showB=!DEFAULT_BASE||SHOWB;
+ $("app").innerHTML='<div class="box lg"><h1>🔐 SANZ Admin</h1><p class="sub">Panel pengelola web pembeli.</p>'
+ +(showB?'<label for="lb">Alamat web pembeli</label><input id="lb" inputmode="url" autocapitalize="off" autocomplete="off" spellcheck="false" placeholder="https://namatoko.netlify.app" value="'+esc(BASE)+'"><p class="note" style="margin:-6px 0 12px">Kosongkan jika panel ini dipasang di web pembeli yang sama.</p>':'')
+ +'<label for="lp">Kata sandi admin</label><input id="lp" type="password" autocomplete="current-password"><p class="msg bad" id="lm">'+esc(msg||"")+'</p><button class="btn" id="lgo" type="button">Masuk</button>'
+ +(showB||!DEFAULT_BASE?'':'<p class="note" style="text-align:center"><a href="#" data-a="showb" style="color:var(--mute)">Ganti alamat web pembeli</a></p>')+'</div>';
+ var pw=$("lp");if(pw)pw.focus()}
 async function doLogin(){
- var b=normBase($("lb").value),p=$("lp").value,m=$("lm"),g=$("lgo");
+ var lb=$("lb"),b=lb?normBase(lb.value):BASE,p=$("lp").value,m=$("lm"),g=$("lgo");
  if(b===null){m.textContent="Alamat web tidak valid. Contoh: https://namatoko.netlify.app";return}
  if(!p){m.textContent="Isi kata sandi admin.";return}
  BASE=b;g.disabled=true;g.textContent="Memeriksa...";m.textContent="";
@@ -281,6 +288,7 @@ document.addEventListener("click",function(e){
  if(e.target.id==="fsave"){save();return}
  if(e.target.closest("#zm")){$("zm").classList.remove("on");return}
  var b=e.target.closest("[data-a]");if(!b)return;var a=b.dataset.a;
+ if(a==="showb"){e.preventDefault();SHOWB=true;loginView("");return}
  if(a==="out"){if(!DIRTY||confirm("Ada perubahan belum disimpan. Tetap keluar?"))logout();return}
  if(a==="tab"){TAB=b.dataset.v;view();return}
  if(a==="rf"){loadOrders(false);return}
@@ -310,7 +318,7 @@ window.addEventListener("beforeunload",function(e){if(DIRTY){e.preventDefault();
 document.addEventListener("visibilitychange",function(){if(!document.hidden&&TOK&&W)loadOrders(true)});
 
 /* ---------- mulai ---------- */
-BASE=lsGet("sanz_base")||"";TOK=ssGet("sanz_tok");
+BASE=lsGet("sanz_base")||DEFAULT_BASE;TOK=ssGet("sanz_tok");
 if(TOK){loadAll().catch(function(){loginView("")})}else loginView("");
 })();
 </script>
